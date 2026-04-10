@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -64,6 +65,36 @@ public class UsuarioController {
         usuario.setNome(usuarioAtualizado.getNome());
         usuario.setEmail(usuarioAtualizado.getEmail());
         usuario.setSenha(usuarioAtualizado.getSenha());
+
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
+
+        return new ResponseEntity<>(usuarioSalvo, HttpStatus.OK);
+    }
+
+    @PatchMapping(value = "/{id}", produces = "application/json")
+    public ResponseEntity<Usuario> patchUsuario(
+            @PathVariable(value = "id") Long id,
+            @RequestBody Usuario usuarioAtualizado) {
+
+        Optional<Usuario> usuarioExistente = usuarioRepository.findById(id);
+
+        if (!usuarioExistente.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Usuario usuario = usuarioExistente.get();
+
+        if (usuarioAtualizado.getNome() != null) {
+            usuario.setNome(usuarioAtualizado.getNome());
+        }
+
+        if (usuarioAtualizado.getEmail() != null) {
+            usuario.setEmail(usuarioAtualizado.getEmail());
+        }
+
+        if (usuarioAtualizado.getSenha() != null) {
+            usuario.setSenha(usuarioAtualizado.getSenha());
+        }
 
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
