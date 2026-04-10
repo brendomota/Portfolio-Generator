@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,18 +34,24 @@ public class UsuarioController {
     @GetMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<Usuario> getUsuarioById(
             @PathVariable(value = "id") Long id) {
-                
+
         Optional<Usuario> usuario = usuarioRepository.findById(id);
         return new ResponseEntity<>(usuario.get(), HttpStatus.OK);
     }
 
     @PostMapping(value = "/", produces = "application/json")
-    public ResponseEntity<Usuario> saveUsuario (
-        @RequestBody Usuario usuario
-    ){
+    public ResponseEntity<Usuario> saveUsuario(
+            @RequestBody Usuario usuario) {
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
         return new ResponseEntity<>(usuarioSalvo, HttpStatus.OK);
     }
 
+    @DeleteMapping(value = "/{id}", produces = "application/text")
+    public ResponseEntity<Usuario> deleteUsuario(
+            @PathVariable(value = "id") Long id) {
+        usuarioRepository.deleteById(id);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
