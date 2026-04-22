@@ -62,7 +62,7 @@ public class UsuarioController {
 
         Usuario usuario = usuarioExistente.get();
 
-        usuario.setNome(usuarioAtualizado.getNome());
+        usuario.setLogin(usuarioAtualizado.getLogin());
         usuario.setEmail(usuarioAtualizado.getEmail());
         usuario.setSenha(usuarioAtualizado.getSenha());
 
@@ -84,8 +84,8 @@ public class UsuarioController {
 
         Usuario usuario = usuarioExistente.get();
 
-        if (usuarioAtualizado.getNome() != null) {
-            usuario.setNome(usuarioAtualizado.getNome());
+        if (usuarioAtualizado.getLogin() != null) {
+            usuario.setLogin(usuarioAtualizado.getLogin());
         }
 
         if (usuarioAtualizado.getEmail() != null) {
