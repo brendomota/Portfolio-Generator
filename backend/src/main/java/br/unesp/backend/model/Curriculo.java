@@ -22,6 +22,19 @@ public class Curriculo {
     @Lob
     private byte[] arquivoPdf;
 
+    // User-uploaded images stored as base64
+    @Column(columnDefinition = "TEXT")
+    private String fotoPerfil;
+
+    @Column(columnDefinition = "TEXT")
+    private String imagemFundo;
+
+    // Portfolio customization
+    @Column(columnDefinition = "TEXT")
+    private String favicon;
+
+    private String temaFundo;
+
     // Fields populated by the AI after PDF processing
     private String nomeExtraido;
     private String emailExtraido;

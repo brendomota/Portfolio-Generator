@@ -125,16 +125,62 @@ public class CurriculoController {
 
         Curriculo curriculo = curriculoExistente.get();
 
+        if (curriculoAtualizado.getFotoPerfil() != null) {
+            curriculo.setFotoPerfil(curriculoAtualizado.getFotoPerfil());
+        }
+        if (curriculoAtualizado.getImagemFundo() != null) {
+            curriculo.setImagemFundo(curriculoAtualizado.getImagemFundo());
+        }
+        if (curriculoAtualizado.getFavicon() != null) {
+            curriculo.setFavicon(curriculoAtualizado.getFavicon());
+        }
+        if (curriculoAtualizado.getTemaFundo() != null) {
+            curriculo.setTemaFundo(curriculoAtualizado.getTemaFundo());
+        }
         if (curriculoAtualizado.getConteudoTexto() != null) {
             curriculo.setConteudoTexto(curriculoAtualizado.getConteudoTexto());
         }
-
         if (curriculoAtualizado.getArquivoPdf() != null) {
             curriculo.setArquivoPdf(curriculoAtualizado.getArquivoPdf());
         }
-
         if (curriculoAtualizado.getUsuario() != null) {
             curriculo.setUsuario(curriculoAtualizado.getUsuario());
+        }
+        if (curriculoAtualizado.getNomeExtraido() != null) {
+            curriculo.setNomeExtraido(curriculoAtualizado.getNomeExtraido());
+        }
+        if (curriculoAtualizado.getEmailExtraido() != null) {
+            curriculo.setEmailExtraido(curriculoAtualizado.getEmailExtraido());
+        }
+        if (curriculoAtualizado.getLinkedinExtraido() != null) {
+            curriculo.setLinkedinExtraido(curriculoAtualizado.getLinkedinExtraido());
+        }
+        if (curriculoAtualizado.getGithubExtraido() != null) {
+            curriculo.setGithubExtraido(curriculoAtualizado.getGithubExtraido());
+        }
+        if (curriculoAtualizado.getLocalizacaoExtraida() != null) {
+            curriculo.setLocalizacaoExtraida(curriculoAtualizado.getLocalizacaoExtraida());
+        }
+        if (curriculoAtualizado.getResumoExtraido() != null) {
+            curriculo.setResumoExtraido(curriculoAtualizado.getResumoExtraido());
+        }
+        if (curriculoAtualizado.getSkillsExtraidas() != null) {
+            curriculo.setSkillsExtraidas(curriculoAtualizado.getSkillsExtraidas());
+        }
+        if (curriculoAtualizado.getSkillsInterpessoaisExtraidas() != null) {
+            curriculo.setSkillsInterpessoaisExtraidas(curriculoAtualizado.getSkillsInterpessoaisExtraidas());
+        }
+        if (curriculoAtualizado.getExperienciasExtraidas() != null) {
+            curriculo.setExperienciasExtraidas(curriculoAtualizado.getExperienciasExtraidas());
+        }
+        if (curriculoAtualizado.getEducacaoExtraida() != null) {
+            curriculo.setEducacaoExtraida(curriculoAtualizado.getEducacaoExtraida());
+        }
+        if (curriculoAtualizado.getProjetosExtraidos() != null) {
+            curriculo.setProjetosExtraidos(curriculoAtualizado.getProjetosExtraidos());
+        }
+        if (curriculoAtualizado.getIdiomasExtraidos() != null) {
+            curriculo.setIdiomasExtraidos(curriculoAtualizado.getIdiomasExtraidos());
         }
 
         Curriculo curriculoSalvo = curriculoRepository.save(curriculo);
