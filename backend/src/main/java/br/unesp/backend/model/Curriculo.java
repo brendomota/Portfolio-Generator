@@ -29,6 +29,12 @@ public class Curriculo {
     @Column(columnDefinition = "TEXT")
     private String imagemFundo;
 
+    // Portfolio customization
+    @Column(columnDefinition = "TEXT")
+    private String favicon;
+
+    private String temaFundo;
+
     // Fields populated by the AI after PDF processing
     private String nomeExtraido;
     private String emailExtraido;

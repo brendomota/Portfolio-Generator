@@ -131,6 +131,12 @@ public class CurriculoController {
         if (curriculoAtualizado.getImagemFundo() != null) {
             curriculo.setImagemFundo(curriculoAtualizado.getImagemFundo());
         }
+        if (curriculoAtualizado.getFavicon() != null) {
+            curriculo.setFavicon(curriculoAtualizado.getFavicon());
+        }
+        if (curriculoAtualizado.getTemaFundo() != null) {
+            curriculo.setTemaFundo(curriculoAtualizado.getTemaFundo());
+        }
         if (curriculoAtualizado.getConteudoTexto() != null) {
             curriculo.setConteudoTexto(curriculoAtualizado.getConteudoTexto());
         }

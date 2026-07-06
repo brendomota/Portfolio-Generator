@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { THEMES } from '../services/themes'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -16,9 +17,12 @@ export default function Dashboard() {
   const [linkCopiado, setLinkCopiado] = useState(false)
   const [previewFoto, setPreviewFoto] = useState(null)
   const [previewFundo, setPreviewFundo] = useState(null)
+  const [previewFavicon, setPreviewFavicon] = useState(null)
   // Always hold the latest base64 — survives PDF re-uploads
   const [fotoBase64, setFotoBase64] = useState(null)
   const [fundoBase64, setFundoBase64] = useState(null)
+  const [faviconBase64, setFaviconBase64] = useState(null)
+  const [temaSelecionado, setTemaSelecionado] = useState('roxo')
 
   const [campos, setCampos] = useState({
     nomeExtraido: '',
@@ -62,10 +66,20 @@ export default function Dashboard() {
     setFundoBase64(b64)
   }
 
+  async function handleFaviconChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setPreviewFavicon(URL.createObjectURL(file))
+    const b64 = await fileToBase64(file)
+    setFaviconBase64(b64)
+  }
+
   function preencherCampos(curriculo) {
     setCurriculoId(curriculo.id)
     if (curriculo.fotoPerfil) { setPreviewFoto(curriculo.fotoPerfil); setFotoBase64(curriculo.fotoPerfil) }
     if (curriculo.imagemFundo) { setPreviewFundo(curriculo.imagemFundo); setFundoBase64(curriculo.imagemFundo) }
+    if (curriculo.favicon) { setPreviewFavicon(curriculo.favicon); setFaviconBase64(curriculo.favicon) }
+    if (curriculo.temaFundo) setTemaSelecionado(curriculo.temaFundo)
     setCampos({
       nomeExtraido: curriculo.nomeExtraido || '',
       emailExtraido: curriculo.emailExtraido || '',
@@ -135,7 +149,11 @@ export default function Dashboard() {
       const payload = { ...campos }
       if (fotoBase64) payload.fotoPerfil = fotoBase64
       if (fundoBase64) payload.imagemFundo = fundoBase64
+      if (faviconBase64) payload.favicon = faviconBase64
+      payload.temaFundo = temaSelecionado
       await api.patch(`/curriculo/${curriculoId}`, payload)
+      // Notify portfolio tab to refresh immediately
+      localStorage.setItem('portfolio_updated', Date.now().toString())
       setSucesso('Dados salvos com sucesso!')
     } catch {
       setErro('Erro ao salvar as alterações.')
@@ -166,6 +184,16 @@ export default function Dashboard() {
     <div className="min-vh-100 d-flex flex-column text-white" style={{
       background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
     }}>
+      <style>{`
+        .dashboard-input,
+        .dashboard-input:focus {
+          background: rgba(0,0,0,0.35) !important;
+          border: 1px solid rgba(0,0,0,0.4) !important;
+          box-shadow: inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04) !important;
+          color: #fff !important;
+          outline: none;
+        }
+      `}</style>
 
       {/* Navbar — igual ao da Home */}
       <nav className="navbar px-4" style={{ backgroundColor: 'transparent', background: 'none', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
@@ -193,7 +221,7 @@ export default function Dashboard() {
               <p className="text-info fw-semibold small mb-3">{portfolioUrl}</p>
               <div className="d-flex justify-content-center gap-2">
                 <button className="btn btn-sm btn-outline-light" onClick={copiarLink}>
-                  {linkCopiado ? '✅ Copiado!' : '📋 Copiar link'}
+                  {linkCopiado ? '✅ Copiado!' : '📋 Copie seu link'}
                 </button>
                 <button className="btn btn-sm btn-primary" onClick={abrirPortfolio}>
                   🌐 Abrir ↗
@@ -235,8 +263,38 @@ export default function Dashboard() {
               <h5 className="card-title fw-bold text-white">🖼️ Personalização visual</h5>
               <p className="text-light opacity-75 small mb-3">Adicione foto de perfil e imagem de fundo para o seu portfólio.</p>
               <div className="row g-3">
+                {/* Tema de fundo */}
+                <div className="col-12">
+                  <label className="form-label small text-light">Tema de fundo do portfólio</label>
+                  <div className="d-flex flex-wrap gap-2 mt-1">
+                    {THEMES.map(t => (
+                      <div
+                        key={t.id}
+                        onClick={() => setTemaSelecionado(t.id)}
+                        style={{
+                          background: t.preview,
+                          width: 64,
+                          height: 40,
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          border: temaSelecionado === t.id ? '3px solid #fff' : '3px solid transparent',
+                          boxShadow: temaSelecionado === t.id ? '0 0 0 2px #6366f1' : 'none',
+                          transition: 'all 0.15s',
+                        }}
+                        title={t.nome}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-light opacity-50 small mt-1">
+                    Selecionado: <strong className="text-white">{THEMES.find(t => t.id === temaSelecionado)?.nome}</strong>
+                  </p>
+                </div>
+
+                {/* Foto e fundo */}
                 <div className="col-md-6">
-                  <label className="form-label small text-light">Foto de perfil</label>
+                  <label className="form-label small text-light">
+                    Foto de perfil <span className="opacity-50">— quadrada, 400×400px ideal, máx. 2MB</span>
+                  </label>
                   <input className="form-control form-control-sm" type="file" accept="image/*" onChange={handleFotoChange} />
                   {previewFoto && (
                     <img src={previewFoto} alt="preview" className="mt-2 rounded-circle border border-primary"
@@ -244,11 +302,26 @@ export default function Dashboard() {
                   )}
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small text-light">Imagem de fundo</label>
+                  <label className="form-label small text-light">
+                    Imagem de fundo <span className="opacity-50">— 1920×1080px ideal, máx. 5MB</span>
+                  </label>
                   <input className="form-control form-control-sm" type="file" accept="image/*" onChange={handleFundoChange} />
                   {previewFundo && (
                     <img src={previewFundo} alt="preview fundo" className="mt-2 rounded border border-secondary w-100"
                       style={{ height: 72, objectFit: 'cover' }} />
+                  )}
+                </div>
+
+                {/* Favicon */}
+                <div className="col-md-6">
+                  <label className="form-label small text-light">
+                    Ícone da aba (favicon) <span className="opacity-50">— PNG/ICO, máx. 512×512px, 200KB</span>
+                  </label>
+                  <input className="form-control form-control-sm" type="file" accept="image/png,image/x-icon,image/svg+xml"
+                    onChange={handleFaviconChange} />
+                  {previewFavicon && (
+                    <img src={previewFavicon} alt="favicon preview" className="mt-2 rounded border border-secondary"
+                      style={{ width: 40, height: 40, objectFit: 'contain', background: '#333', padding: 4 }} />
                   )}
                 </div>
               </div>
@@ -269,39 +342,39 @@ export default function Dashboard() {
                   {/* Dados básicos */}
                   <div className="col-md-6">
                     <label className="form-label small text-light">Nome</label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="nomeExtraido" value={campos.nomeExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">Email</label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="emailExtraido" value={campos.emailExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">LinkedIn</label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="linkedinExtraido" value={campos.linkedinExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">GitHub</label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="githubExtraido" value={campos.githubExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">Localização</label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="localizacaoExtraida" value={campos.localizacaoExtraida} onChange={handleCampo} />
                   </div>
                   <div className="col-12">
                     <label className="form-label small text-light">Resumo profissional</label>
-                    <textarea className="form-control form-control-sm bg-dark text-white border-dark"
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       rows={3} name="resumoExtraido" value={campos.resumoExtraido} onChange={handleCampo} />
                   </div>
 
                   {/* Skills com preview */}
                   <div className="col-12">
                     <label className="form-label small text-light">Skills Técnicas <span className="opacity-50">(separadas por vírgula)</span></label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="skillsExtraidas" value={campos.skillsExtraidas} onChange={handleCampo} />
                     <div className="d-flex flex-wrap gap-2 mt-2">
                       {campos.skillsExtraidas?.split(',').filter(s => s.trim()).map((s, i) => (
@@ -312,7 +385,7 @@ export default function Dashboard() {
 
                   <div className="col-12">
                     <label className="form-label small text-light">Soft Skills <span className="opacity-50">(separadas por vírgula)</span></label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="skillsInterpessoaisExtraidas" value={campos.skillsInterpessoaisExtraidas} onChange={handleCampo} />
                     <div className="d-flex flex-wrap gap-2 mt-2">
                       {campos.skillsInterpessoaisExtraidas?.split(',').filter(s => s.trim()).map((s, i) => (
@@ -323,7 +396,7 @@ export default function Dashboard() {
 
                   <div className="col-12">
                     <label className="form-label small text-light">Idiomas <span className="opacity-50">(separados por vírgula)</span></label>
-                    <input className="form-control form-control-sm bg-dark text-white border-dark"
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       name="idiomasExtraidos" value={campos.idiomasExtraidos} onChange={handleCampo} />
                     <div className="d-flex flex-wrap gap-2 mt-2">
                       {campos.idiomasExtraidos?.split(',').filter(s => s.trim()).map((s, i) => (
@@ -335,23 +408,23 @@ export default function Dashboard() {
                   {/* Textos longos */}
                   <div className="col-12">
                     <label className="form-label small text-light">Experiências</label>
-                    <textarea className="form-control form-control-sm bg-dark text-white border-dark"
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       rows={4} name="experienciasExtraidas" value={campos.experienciasExtraidas} onChange={handleCampo} />
                   </div>
                   <div className="col-12">
                     <label className="form-label small text-light">Educação</label>
-                    <textarea className="form-control form-control-sm bg-dark text-white border-dark"
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       rows={3} name="educacaoExtraida" value={campos.educacaoExtraida} onChange={handleCampo} />
                   </div>
                   <div className="col-12">
                     <label className="form-label small text-light">Projetos</label>
-                    <textarea className="form-control form-control-sm bg-dark text-white border-dark"
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
                       rows={4} name="projetosExtraidos" value={campos.projetosExtraidos} onChange={handleCampo} />
                   </div>
 
                 </div>
 
-                <div className="d-flex gap-3 mt-4">
+                <div className="d-flex gap-3 mt-4 justify-content-center">
                   <button type="submit" className="btn btn-primary" disabled={salvando}>
                     {salvando ? <><span className="spinner-border spinner-border-sm me-2" />Salvando...</> : '💾 Salvar alterações'}
                   </button>
