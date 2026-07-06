@@ -19,9 +19,36 @@ public class Curriculo {
     @Column(columnDefinition = "TEXT")
     private String conteudoTexto;
 
-
-    @Lob //Essa anotação é para indicar ao BD que ele deve armazenar um arquivo grande
+    @Lob
     private byte[] arquivoPdf;
+
+    // Fields populated by the AI after PDF processing
+    private String nomeExtraido;
+    private String emailExtraido;
+    private String linkedinExtraido;
+    private String githubExtraido;
+    private String localizacaoExtraida;
+
+    @Column(columnDefinition = "TEXT")
+    private String resumoExtraido;
+
+    @Column(columnDefinition = "TEXT")
+    private String skillsExtraidas;
+
+    @Column(columnDefinition = "TEXT")
+    private String skillsInterpessoaisExtraidas;
+
+    @Column(columnDefinition = "TEXT")
+    private String experienciasExtraidas;
+
+    @Column(columnDefinition = "TEXT")
+    private String educacaoExtraida;
+
+    @Column(columnDefinition = "TEXT")
+    private String projetosExtraidos;
+
+    @Column(columnDefinition = "TEXT")
+    private String idiomasExtraidos;
 
     private LocalDateTime dataUpload;
 

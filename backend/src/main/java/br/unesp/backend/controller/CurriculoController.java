@@ -1,8 +1,10 @@
 package br.unesp.backend.controller;
 
 import br.unesp.backend.model.Curriculo;
+import br.unesp.backend.model.CurriculoDadosIA;
 import br.unesp.backend.model.Usuario;
 import br.unesp.backend.repository.CurriculoRepository;
+import br.unesp.backend.service.IaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,9 @@ import java.util.Optional;
 public class CurriculoController {
     @Autowired
     private CurriculoRepository curriculoRepository;
+
+    @Autowired
+    private IaService iaService;
 
     @GetMapping(value = "/", produces = "application/json")
     public ResponseEntity<List<Curriculo>> getAllCurriculos() {
@@ -45,24 +50,39 @@ public class CurriculoController {
             @RequestParam("arquivoPdf") MultipartFile arquivoPdf) {
 
         try {
-            //aqui é criado uma referência do usuário apenas com o ID para o relacionamento
             Usuario usuario = new Usuario();
             usuario.setId(usuarioId);
+
+            byte[] pdfBytes = arquivoPdf.isEmpty() ? new byte[0] : arquivoPdf.getBytes();
+
+            // Send PDF to AI and extract structured data
+            CurriculoDadosIA dadosIA = iaService.extrairDadosDoCurriculo(pdfBytes);
 
             Curriculo curriculo = new Curriculo();
             curriculo.setConteudoTexto(conteudoTexto);
             curriculo.setUsuario(usuario);
+            curriculo.setArquivoPdf(pdfBytes);
 
-            // arquivo recebido vai para o formato byte[]
-            if (!arquivoPdf.isEmpty()) {
-                curriculo.setArquivoPdf(arquivoPdf.getBytes());
-            }
+            // Populate AI-extracted fields
+            curriculo.setNomeExtraido(dadosIA.nome());
+            curriculo.setEmailExtraido(dadosIA.email());
+            curriculo.setLinkedinExtraido(dadosIA.linkedin());
+            curriculo.setGithubExtraido(dadosIA.github());
+            curriculo.setLocalizacaoExtraida(dadosIA.localizacao());
+            curriculo.setResumoExtraido(dadosIA.resumo());
+            curriculo.setSkillsExtraidas(dadosIA.skills());
+            curriculo.setSkillsInterpessoaisExtraidas(dadosIA.skillsInterpessoais());
+            curriculo.setExperienciasExtraidas(dadosIA.experiencias());
+            curriculo.setEducacaoExtraida(dadosIA.educacao());
+            curriculo.setProjetosExtraidos(dadosIA.projetos());
+            curriculo.setIdiomasExtraidos(dadosIA.idiomas());
 
             Curriculo curriculoSalvo = curriculoRepository.save(curriculo);
 
             return new ResponseEntity<>(curriculoSalvo, HttpStatus.CREATED);
 
         } catch (Exception e) {
+            System.out.println("Erro ao salvar currículo: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
