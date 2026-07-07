@@ -125,11 +125,12 @@ export default function Dashboard() {
       })
       preencherCampos(resposta.data)
 
-      // Re-apply existing photos to the new resume record so they are not lost
-      if (fotoBase64 || fundoBase64) {
+      // Re-apply existing images to the new resume record so they are not lost
+      if (fotoBase64 || fundoBase64 || faviconBase64) {
         const patch = {}
         if (fotoBase64) patch.fotoPerfil = fotoBase64
         if (fundoBase64) patch.imagemFundo = fundoBase64
+        if (faviconBase64) patch.favicon = faviconBase64
         await api.patch(`/curriculo/${resposta.data.id}`, patch)
       }
 
@@ -272,7 +273,7 @@ export default function Dashboard() {
                         key={t.id}
                         onClick={() => setTemaSelecionado(t.id)}
                         style={{
-                          background: t.preview,
+                          background: t.gradient,
                           width: 64,
                           height: 40,
                           borderRadius: 8,
@@ -342,40 +343,33 @@ export default function Dashboard() {
                   {/* Dados básicos */}
                   <div className="col-md-6">
                     <label className="form-label small text-light">Nome</label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="nomeExtraido" value={campos.nomeExtraido} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="nomeExtraido" value={campos.nomeExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">Email</label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="emailExtraido" value={campos.emailExtraido} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="emailExtraido" value={campos.emailExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">LinkedIn</label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="linkedinExtraido" value={campos.linkedinExtraido} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="linkedinExtraido" value={campos.linkedinExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">GitHub</label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="githubExtraido" value={campos.githubExtraido} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="githubExtraido" value={campos.githubExtraido} onChange={handleCampo} />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label small text-light">Localização</label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="localizacaoExtraida" value={campos.localizacaoExtraida} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="localizacaoExtraida" value={campos.localizacaoExtraida} onChange={handleCampo} />
                   </div>
                   <div className="col-12">
                     <label className="form-label small text-light">Resumo profissional</label>
-                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      rows={3} name="resumoExtraido" value={campos.resumoExtraido} onChange={handleCampo} />
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input"                       rows={3} name="resumoExtraido" value={campos.resumoExtraido} onChange={handleCampo} />
                   </div>
 
                   {/* Skills com preview */}
                   <div className="col-12">
                     <label className="form-label small text-light">Skills Técnicas <span className="opacity-50">(separadas por vírgula)</span></label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="skillsExtraidas" value={campos.skillsExtraidas} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="skillsExtraidas" value={campos.skillsExtraidas} onChange={handleCampo} />
                     <div className="d-flex flex-wrap gap-2 mt-2">
                       {campos.skillsExtraidas?.split(',').filter(s => s.trim()).map((s, i) => (
                         <span key={i} className="badge bg-primary">{s.trim()}</span>
@@ -385,8 +379,7 @@ export default function Dashboard() {
 
                   <div className="col-12">
                     <label className="form-label small text-light">Soft Skills <span className="opacity-50">(separadas por vírgula)</span></label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="skillsInterpessoaisExtraidas" value={campos.skillsInterpessoaisExtraidas} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="skillsInterpessoaisExtraidas" value={campos.skillsInterpessoaisExtraidas} onChange={handleCampo} />
                     <div className="d-flex flex-wrap gap-2 mt-2">
                       {campos.skillsInterpessoaisExtraidas?.split(',').filter(s => s.trim()).map((s, i) => (
                         <span key={i} className="badge bg-success">{s.trim()}</span>
@@ -396,8 +389,7 @@ export default function Dashboard() {
 
                   <div className="col-12">
                     <label className="form-label small text-light">Idiomas <span className="opacity-50">(separados por vírgula)</span></label>
-                    <input className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      name="idiomasExtraidos" value={campos.idiomasExtraidos} onChange={handleCampo} />
+                    <input className="form-control form-control-sm text-white border-0 dashboard-input"                       name="idiomasExtraidos" value={campos.idiomasExtraidos} onChange={handleCampo} />
                     <div className="d-flex flex-wrap gap-2 mt-2">
                       {campos.idiomasExtraidos?.split(',').filter(s => s.trim()).map((s, i) => (
                         <span key={i} className="badge bg-warning text-dark">{s.trim()}</span>
@@ -408,18 +400,15 @@ export default function Dashboard() {
                   {/* Textos longos */}
                   <div className="col-12">
                     <label className="form-label small text-light">Experiências</label>
-                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      rows={4} name="experienciasExtraidas" value={campos.experienciasExtraidas} onChange={handleCampo} />
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input"                       rows={4} name="experienciasExtraidas" value={campos.experienciasExtraidas} onChange={handleCampo} />
                   </div>
                   <div className="col-12">
                     <label className="form-label small text-light">Educação</label>
-                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      rows={3} name="educacaoExtraida" value={campos.educacaoExtraida} onChange={handleCampo} />
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input"                       rows={3} name="educacaoExtraida" value={campos.educacaoExtraida} onChange={handleCampo} />
                   </div>
                   <div className="col-12">
                     <label className="form-label small text-light">Projetos</label>
-                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input" style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,0,0,0.4)', boxShadow: 'inset 2px 3px 10px rgba(0,0,0,0.7), inset -1px -1px 4px rgba(255,255,255,0.04)' }}
-                      rows={4} name="projetosExtraidos" value={campos.projetosExtraidos} onChange={handleCampo} />
+                    <textarea className="form-control form-control-sm text-white border-0 dashboard-input"                       rows={4} name="projetosExtraidos" value={campos.projetosExtraidos} onChange={handleCampo} />
                   </div>
 
                 </div>

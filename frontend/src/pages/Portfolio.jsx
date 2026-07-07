@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { getTheme } from '../services/themes'
@@ -9,29 +9,33 @@ export default function Portfolio() {
   const [curriculo, setCurriculo] = useState(null)
   const [carregando, setCarregando] = useState(true)
 
-  async function buscar() {
+  const buscar = useCallback(async () => {
     try {
-      const resposta = await api.get('/curriculo/')
-      const todos = resposta.data
-      const meus = todos.filter(c => c.usuario?.login === username)
-      if (meus.length > 0) setCurriculo(meus[meus.length - 1])
+      const resposta = await api.get(`/curriculo/publico/${username}`)
+      setCurriculo(resposta.data)
     } catch {
-      // Will show not found state
+      setCurriculo(null)
     } finally {
       setCarregando(false)
     }
-  }
+  }, [username])
+
+  // Reset state when navigating to a different portfolio
+  useEffect(() => {
+    setCurriculo(null)
+    setCarregando(true)
+  }, [username])
 
   // Initial load
   useEffect(() => {
     buscar()
-  }, [username])
+  }, [buscar])
 
   // Poll every 4 seconds for real-time updates
   useEffect(() => {
     const interval = setInterval(buscar, 4000)
     return () => clearInterval(interval)
-  }, [username])
+  }, [buscar])
 
   // Instant refresh when dashboard triggers a save event via localStorage
   useEffect(() => {
@@ -40,7 +44,7 @@ export default function Portfolio() {
     }
     window.addEventListener('storage', onStorageChange)
     return () => window.removeEventListener('storage', onStorageChange)
-  }, [username])
+  }, [buscar])
 
   // Must be before any conditional return — React rules of hooks
   useEffect(() => {
@@ -87,10 +91,10 @@ export default function Portfolio() {
   }
 
   // Extract last color from theme gradient to use as fade target
-  const fadeColor = tema.background.match(/#[0-9a-f]{6}/gi)?.slice(-1)[0] || '#0f0c29'
+  const fadeColor = tema.gradient.match(/#[0-9a-f]{6}/gi)?.slice(-1)[0] || '#0f0c29'
 
   return (
-    <div className="text-white min-vh-100" style={{ background: tema.background }}>
+    <div className="text-white min-vh-100" style={{ background: tema.gradient }}>
       {/* Header with background image + fade effect */}
       <header style={{ position: 'relative', overflow: 'hidden', minHeight: 340 }}>
         {/* Background image */}
@@ -104,7 +108,7 @@ export default function Portfolio() {
           }} />
         ) : (
           // Fallback: use theme gradient as header background when no image
-          <div style={{ position: 'absolute', inset: 0, background: tema.background, opacity: 0.6 }} />
+          <div style={{ position: 'absolute', inset: 0, background: tema.gradient, opacity: 0.6 }} />
         )}
 
         {/* Strong fade — top layer darkens image, bottom merges into page */}
@@ -152,7 +156,7 @@ export default function Portfolio() {
           )}
           <div className="d-flex justify-content-center gap-3 flex-wrap mt-2">
             {curriculo.linkedinExtraido && (
-              <a href={`https://${curriculo.linkedinExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="text-decoration-none">
+              <a href={curriculo.linkedinExtraido.startsWith('http') ? curriculo.linkedinExtraido : `https://${curriculo.linkedinExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="text-decoration-none">
                 💼 LinkedIn
               </a>
             )}
@@ -162,7 +166,7 @@ export default function Portfolio() {
               </a>
             )}
             {curriculo.githubExtraido && (
-              <a href={`https://${curriculo.githubExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="text-decoration-none">
+              <a href={curriculo.githubExtraido.startsWith('http') ? curriculo.githubExtraido : `https://${curriculo.githubExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="text-decoration-none">
                 🐙 GitHub
               </a>
             )}

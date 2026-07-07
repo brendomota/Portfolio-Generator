@@ -8,6 +8,7 @@ import br.unesp.backend.service.IaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,6 +29,18 @@ public class CurriculoController {
     public ResponseEntity<List<Curriculo>> getAllCurriculos() {
         List<Curriculo> list = (List<Curriculo>) curriculoRepository.findAll();
         return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/publico/{login}", produces = "application/json")
+    public ResponseEntity<Curriculo> getCurriculoPublicoPorLogin(
+            @PathVariable(value = "login") String login) {
+
+        List<Curriculo> todos = (List<Curriculo>) curriculoRepository.findAll();
+        return todos.stream()
+                .filter(c -> c.getUsuario() != null && login.equals(c.getUsuario().getLogin()))
+                .reduce((a, b) -> b)
+                .map(c -> new ResponseEntity<>(c, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping(value = "/{id}", produces = "application/json")
@@ -115,7 +128,8 @@ public class CurriculoController {
     @PatchMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<Curriculo> patchCurriculo(
             @PathVariable(value = "id") Long id,
-            @RequestBody Curriculo curriculoAtualizado) {
+            @RequestBody Curriculo curriculoAtualizado,
+            @AuthenticationPrincipal Usuario usuarioAutenticado) {
 
         Optional<Curriculo> curriculoExistente = curriculoRepository.findById(id);
 
@@ -124,6 +138,11 @@ public class CurriculoController {
         }
 
         Curriculo curriculo = curriculoExistente.get();
+
+        if (curriculo.getUsuario() == null ||
+                !curriculo.getUsuario().getLogin().equals(usuarioAutenticado.getLogin())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
 
         if (curriculoAtualizado.getFotoPerfil() != null) {
             curriculo.setFotoPerfil(curriculoAtualizado.getFotoPerfil());
