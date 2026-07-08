@@ -292,7 +292,7 @@ kill -9 <PID>
 ```
 
 ---
-
+ 
 ## Resumo dos comandos (após configuração inicial)
 
 Para subir o projeto nas próximas vezes, basta abrir dois terminais e rodar:
