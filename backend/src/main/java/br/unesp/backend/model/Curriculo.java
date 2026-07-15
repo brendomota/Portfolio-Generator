@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -68,6 +70,16 @@ public class Curriculo {
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
+
+    // N:N — um currículo tem várias skills e uma mesma skill aparece em vários
+    // currículos. Gera a tabela de junção "curriculo_skill" com as duas FKs.
+    // A lista é sincronizada a partir do campo textual skillsExtraidas.
+    @ManyToMany
+    @JoinTable(
+            name = "curriculo_skill",
+            joinColumns = @JoinColumn(name = "curriculo_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id"))
+    private List<Skill> skills = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

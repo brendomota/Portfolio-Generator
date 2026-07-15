@@ -60,7 +60,12 @@ public class AuthenticationController {
         System.out.println(encryptedPassword);
         System.out.println(data.role());
 
-        Usuario newUser = new Usuario(data.login(), data.email(), encryptedPassword, data.role());
+        // Herança SINGLE_TABLE: se o papel for ADMIN, instancia a subclasse Admin.
+        // O Hibernate grava ambos na MESMA tabela "usuario", diferenciando pela
+        // coluna discriminadora "tipo" (ADMIN ou USUARIO).
+        Usuario newUser = (data.role() == UserRole.ADMIN)
+                ? new Admin(data.login(), data.email(), encryptedPassword)
+                : new Usuario(data.login(), data.email(), encryptedPassword, data.role());
 
         this.usuarioRepository.save(newUser);
         return ResponseEntity.ok().build();

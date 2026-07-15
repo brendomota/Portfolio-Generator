@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
 
+// Esta página renderiza DENTRO do <Outlet> do AuthLayout
+// (cabeçalho, navegação e rodapé vêm do layout fixo)
+
 export default function Login() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ login: '', password: '' })
@@ -29,23 +32,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-vh-100 d-flex flex-column bg-dark">
-      {/* Top bar */}
-      <div className="d-flex justify-content-between align-items-center px-4 py-3">
-        <span
-          className="text-white fw-bold fs-5"
-          style={{ cursor: 'pointer' }}
-          onClick={() => navigate('/')}
-        >
-          🚀 PortfólioPro
-        </span>
-        <button className="btn btn-outline-light btn-sm" onClick={() => navigate('/')}>
-          ← Voltar
-        </button>
-      </div>
-
-      <div className="flex-grow-1 d-flex align-items-center justify-content-center">
-      <div className="card shadow p-4" style={{ width: '100%', maxWidth: 420 }}>
+    <div className="card shadow p-4" style={{ width: '100%', maxWidth: 420 }}>
         <h2 className="text-center fw-bold mb-1 text-dark">🚀 PortfólioPro</h2>
         <p className="text-center text-muted mb-4">Entre na sua conta</p>
 
@@ -83,12 +70,10 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center mt-3 mb-0">
-          Não tem conta?{' '}
-          <Link to="/cadastro">Cadastre-se</Link>
-        </p>
-      </div>
-      </div>
+      <p className="text-center mt-3 mb-0">
+        Não tem conta?{' '}
+        <Link to="/cadastro">Cadastre-se</Link>
+      </p>
     </div>
   )
 }

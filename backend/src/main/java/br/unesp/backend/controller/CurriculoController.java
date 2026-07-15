@@ -2,8 +2,10 @@ package br.unesp.backend.controller;
 
 import br.unesp.backend.model.Curriculo;
 import br.unesp.backend.model.CurriculoDadosIA;
+import br.unesp.backend.model.Skill;
 import br.unesp.backend.model.Usuario;
 import br.unesp.backend.repository.CurriculoRepository;
+import br.unesp.backend.repository.SkillRepository;
 import br.unesp.backend.service.IaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +28,30 @@ public class CurriculoController {
 
     @Autowired
     private IaService iaService;
+
+    @Autowired
+    private SkillRepository skillRepository;
+
+    // Converte o texto "Java, React, SQL" na relação N:N Curriculo <-> Skill.
+    // Reaproveita skills já existentes no banco e cria as que faltarem.
+    private void sincronizarSkills(Curriculo curriculo) {
+        List<Skill> skills = new ArrayList<>();
+        String texto = curriculo.getSkillsExtraidas();
+        if (texto != null) {
+            Arrays.stream(texto.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .distinct()
+                    .forEach(nome -> {
+                        Skill skill = skillRepository.findByNome(nome);
+                        if (skill == null) {
+                            skill = skillRepository.save(new Skill(nome));
+                        }
+                        skills.add(skill);
+                    });
+        }
+        curriculo.setSkills(skills);
+    }
 
     @GetMapping(value = "/", produces = "application/json")
     public ResponseEntity<List<Curriculo>> getAllCurriculos() {
@@ -89,6 +117,9 @@ public class CurriculoController {
             curriculo.setEducacaoExtraida(dadosIA.educacao());
             curriculo.setProjetosExtraidos(dadosIA.projetos());
             curriculo.setIdiomasExtraidos(dadosIA.idiomas());
+
+            // Popula a relação N:N a partir das skills extraídas pela IA
+            sincronizarSkills(curriculo);
 
             Curriculo curriculoSalvo = curriculoRepository.save(curriculo);
 
@@ -185,6 +216,8 @@ public class CurriculoController {
         }
         if (curriculoAtualizado.getSkillsExtraidas() != null) {
             curriculo.setSkillsExtraidas(curriculoAtualizado.getSkillsExtraidas());
+            // Mantém a relação N:N coerente com o texto editado pelo usuário
+            sincronizarSkills(curriculo);
         }
         if (curriculoAtualizado.getSkillsInterpessoaisExtraidas() != null) {
             curriculo.setSkillsInterpessoaisExtraidas(curriculoAtualizado.getSkillsInterpessoaisExtraidas());

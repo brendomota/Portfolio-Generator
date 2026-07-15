@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import AuthLayout from './layouts/AuthLayout'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Cadastro from './pages/Cadastro'
@@ -13,8 +14,14 @@ function PrivateRoute({ children }) {
 
 const router = createBrowserRouter([
   { path: '/',                    element: <Home /> },
-  { path: '/login',               element: <Login /> },
-  { path: '/cadastro',            element: <Cadastro /> },
+  {
+    // Rota-pai com layout fixo: Login e Cadastro renderizam no <Outlet> do AuthLayout
+    element: <AuthLayout />,
+    children: [
+      { path: '/login',    element: <Login /> },
+      { path: '/cadastro', element: <Cadastro /> },
+    ],
+  },
   { path: '/dashboard',           element: <PrivateRoute><Dashboard /></PrivateRoute> },
   { path: '/portfolio/:username', element: <Portfolio /> },
   { path: '*',                    element: <NotFound />, errorElement: <NotFound /> },

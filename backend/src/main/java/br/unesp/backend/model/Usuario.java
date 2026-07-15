@@ -14,6 +14,9 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "tipo")
+@DiscriminatorValue("USUARIO")
 @Getter
 @Setter
 @NoArgsConstructor
