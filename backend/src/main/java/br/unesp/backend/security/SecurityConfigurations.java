@@ -40,6 +40,9 @@ public class SecurityConfigurations {
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/curriculo/publico/**").permitAll()
+                        // Libera a UI do Swagger e o JSON do OpenAPI (só a documentação da API,
+                        // não as rotas reais — essas continuam exigindo o Bearer Token)
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

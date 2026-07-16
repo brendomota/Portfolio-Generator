@@ -7,28 +7,31 @@ export default function AuthLayout() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-vh-100 d-flex flex-column bg-dark">
+    <div className="min-h-screen flex flex-col bg-[#212529]">
       {/* Cabeçalho + menu de navegação (fixos) */}
-      <div className="d-flex justify-content-between align-items-center px-4 py-3">
+      <div className="flex justify-between items-center px-6 py-4">
         <span
-          className="text-white fw-bold fs-5"
+          className="text-white font-bold text-xl"
           style={{ cursor: 'pointer' }}
           onClick={() => navigate('/')}
         >
           🚀 PortfólioPro
         </span>
-        <button className="btn btn-outline-light btn-sm" onClick={() => navigate('/')}>
+        <button
+          className="inline-flex items-center justify-center border border-white text-white bg-transparent hover:bg-white hover:text-black px-2 py-1 text-sm rounded transition cursor-pointer"
+          onClick={() => navigate('/')}
+        >
           ← Voltar
         </button>
       </div>
 
       {/* Conteúdo (variável): aqui entra a página filha da rota */}
-      <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+      <div className="flex-1 flex items-center justify-center">
         <Outlet />
       </div>
 
       {/* Rodapé (fixo) */}
-      <footer className="text-secondary text-center py-3 small">
+      <footer className="text-[#6c757d] text-center py-4 text-sm">
         PortfólioPro — UNESP 2026 — Grupo X: Brendo, Gabriel, Gustavo, João Vítor, Rafael
       </footer>
     </div>

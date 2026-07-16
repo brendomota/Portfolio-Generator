@@ -59,8 +59,8 @@ export default function Portfolio() {
 
   if (carregando) {
     return (
-      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-dark text-white">
-        <div className="spinner-border text-primary me-3" />
+      <div className="min-h-screen flex items-center justify-center bg-[#212529] text-white">
+        <div className="inline-block w-8 h-8 align-text-bottom rounded-full border-[0.25em] border-current border-r-transparent animate-[spin_0.75s_linear_infinite] text-[#0d6efd] mr-4" />
         <span>Carregando portfólio...</span>
       </div>
     )
@@ -68,10 +68,15 @@ export default function Portfolio() {
 
   if (!curriculo) {
     return (
-      <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-dark text-white">
-        <h2>Portfólio não encontrado</h2>
-        <p className="text-muted">O usuário <strong>{username}</strong> ainda não gerou um portfólio.</p>
-        <button className="btn btn-primary mt-3" onClick={() => navigate('/')}>Voltar ao início</button>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#212529] text-white">
+        <h2 className="text-[2rem] leading-[1.2] mb-2">Portfólio não encontrado</h2>
+        <p className="text-[#6c757d] mb-4">O usuário <strong>{username}</strong> ainda não gerou um portfólio.</p>
+        <button
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-base leading-normal cursor-pointer transition bg-[#0d6efd] border border-[#0d6efd] text-white hover:bg-[#0b5ed7] hover:border-[#0a58ca] mt-4"
+          onClick={() => navigate('/')}
+        >
+          Voltar ao início
+        </button>
       </div>
     )
   }
@@ -94,7 +99,7 @@ export default function Portfolio() {
   const fadeColor = tema.gradient.match(/#[0-9a-f]{6}/gi)?.slice(-1)[0] || '#0f0c29'
 
   return (
-    <div className="text-white min-vh-100" style={{ background: tema.gradient }}>
+    <div className="text-white min-h-screen" style={{ background: tema.gradient }}>
       {/* Header with background image + fade effect */}
       <header style={{ position: 'relative', overflow: 'hidden', minHeight: 340 }}>
         {/* Background image */}
@@ -119,13 +124,13 @@ export default function Portfolio() {
         }} />
 
         {/* Header content */}
-        <div className="container text-center py-5" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="container-bs text-center py-12" style={{ position: 'relative', zIndex: 1 }}>
           {/* Profile photo or initial avatar */}
-          {curriculo.fotoPerfil ? (
+          {curriculo.fotoPerfil ? (<div className="w-full flex justify-center">
             <img
               src={curriculo.fotoPerfil}
               alt="Foto de perfil"
-              className="rounded-circle mb-3"
+              className="rounded-full mb-4"
               style={{
                 width: 140,
                 height: 140,
@@ -133,10 +138,10 @@ export default function Portfolio() {
                 border: `3px solid rgba(255,255,255,0.12)`,
                 boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
               }}
-            />
+            /></div>
           ) : (
             <div
-              className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+              className="rounded-full flex items-center justify-center mx-auto mb-4"
               style={{
                 width: 140,
                 height: 140,
@@ -150,23 +155,23 @@ export default function Portfolio() {
             </div>
           )}
 
-          <h1 className="display-5 fw-bold" style={{ color: '#f0f4f8' }}>{curriculo.nomeExtraido}</h1>
+          <h1 className="text-[3rem] leading-[1.2] font-bold mb-2" style={{ color: '#f0f4f8' }}>{curriculo.nomeExtraido}</h1>
           {curriculo.localizacaoExtraida && (
             <p className="mb-2" style={{ color: 'rgba(240,244,248,0.75)' }}>📍 {curriculo.localizacaoExtraida}</p>
           )}
-          <div className="d-flex justify-content-center gap-3 flex-wrap mt-2">
+          <div className="flex justify-center gap-4 flex-wrap mt-2">
             {curriculo.linkedinExtraido && (
-              <a href={curriculo.linkedinExtraido.startsWith('http') ? curriculo.linkedinExtraido : `https://${curriculo.linkedinExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="text-decoration-none">
+              <a href={curriculo.linkedinExtraido.startsWith('http') ? curriculo.linkedinExtraido : `https://${curriculo.linkedinExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="no-underline">
                 💼 LinkedIn
               </a>
             )}
             {curriculo.emailExtraido && (
-              <a href={`mailto:${curriculo.emailExtraido}`} style={{ color: '#a5d8ff' }} className="text-decoration-none">
+              <a href={`mailto:${curriculo.emailExtraido}`} style={{ color: '#a5d8ff' }} className="no-underline">
                 ✉️ {curriculo.emailExtraido}
               </a>
             )}
             {curriculo.githubExtraido && (
-              <a href={curriculo.githubExtraido.startsWith('http') ? curriculo.githubExtraido : `https://${curriculo.githubExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="text-decoration-none">
+              <a href={curriculo.githubExtraido.startsWith('http') ? curriculo.githubExtraido : `https://${curriculo.githubExtraido}`} target="_blank" rel="noreferrer" style={{ color: '#a5d8ff' }} className="no-underline">
                 🐙 GitHub
               </a>
             )}
@@ -174,28 +179,28 @@ export default function Portfolio() {
         </div>
       </header>
 
-      <div className="container py-5">
-        <div className="row g-4">
+      <div className="container-bs py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left column */}
-          <div className="col-lg-4">
+          <div className="lg:col-span-4">
             {/* Resumo */}
             {curriculo.resumoExtraido && (
-              <div className="card border-0 mb-4" style={glass}>
-                <div className="card-body">
-                  <h5 className="card-title fw-bold">Sobre mim</h5>
-                  <p className="card-text">{curriculo.resumoExtraido}</p> 
+              <div className="rounded-md mb-6" style={glass}>
+                <div className="p-4">
+                  <h5 className="font-bold text-[1.25rem] leading-[1.2] mb-2">Sobre mim</h5>
+                  <p>{curriculo.resumoExtraido}</p>
                 </div>
               </div>
             )}
 
             {/* Skills técnicas */}
             {skills.length > 0 && (
-              <div className="card border-0 mb-4" style={glass}>
-                <div className="card-body">
-                  <h5 className="card-title fw-bold">Skills Técnicas</h5>
-                  <div className="d-flex flex-wrap gap-2 mt-2">
+              <div className="rounded-md mb-6" style={glass}>
+                <div className="p-4">
+                  <h5 className="font-bold text-[1.25rem] leading-[1.2] mb-2">Skills Técnicas</h5>
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {skills.map((s, i) => (
-                      <span key={i} className="badge bg-primary">{s}</span>
+                      <span key={i} className="inline-block px-[0.65em] py-[0.35em] text-[0.75em] font-bold leading-none text-center whitespace-nowrap align-baseline rounded-md bg-[#0d6efd] text-white">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -204,12 +209,12 @@ export default function Portfolio() {
 
             {/* Skills interpessoais */}
             {skillsInter.length > 0 && (
-              <div className="card border-0 mb-4" style={glass}>
-                <div className="card-body">
-                  <h5 className="card-title fw-bold">Soft Skills</h5>
-                  <div className="d-flex flex-wrap gap-2 mt-2">
+              <div className="rounded-md mb-6" style={glass}>
+                <div className="p-4">
+                  <h5 className="font-bold text-[1.25rem] leading-[1.2] mb-2">Soft Skills</h5>
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {skillsInter.map((s, i) => (
-                      <span key={i} className="badge bg-success">{s}</span>
+                      <span key={i} className="inline-block px-[0.65em] py-[0.35em] text-[0.75em] font-bold leading-none text-center whitespace-nowrap align-baseline rounded-md bg-[#198754] text-white">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -218,12 +223,12 @@ export default function Portfolio() {
 
             {/* Idiomas */}
             {idiomas.length > 0 && (
-              <div className="card border-0 mb-4" style={glass}>
-                <div className="card-body">
-                  <h5 className="card-title fw-bold">Idiomas</h5>
-                  <div className="d-flex flex-wrap gap-2 mt-2">
+              <div className="rounded-md mb-6" style={glass}>
+                <div className="p-4">
+                  <h5 className="font-bold text-[1.25rem] leading-[1.2] mb-2">Idiomas</h5>
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {idiomas.map((s, i) => (
-                      <span key={i} className="badge bg-warning text-dark">{s}</span>
+                      <span key={i} className="inline-block px-[0.65em] py-[0.35em] text-[0.75em] font-bold leading-none text-center whitespace-nowrap align-baseline rounded-md bg-[#ffc107] text-[#212529]">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -232,14 +237,14 @@ export default function Portfolio() {
           </div>
 
           {/* Right column */}
-          <div className="col-lg-8">
+          <div className="lg:col-span-8">
             {/* Experiências */}
             {curriculo.experienciasExtraidas && (
-              <div className="mb-4">
-                <h4 className="fw-bold border-bottom pb-2 mb-3" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}>💼 Experiências</h4>
+              <div className="mb-6">
+                <h4 className="font-bold text-[1.5rem] leading-[1.2] border-b pb-2 mb-4" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}>💼 Experiências</h4>
                 {curriculo.experienciasExtraidas.split(',').map((exp, i) => (
-                  <div key={i} className="card border-0 mb-3" style={glass}>
-                    <div className="card-body">
+                  <div key={i} className="rounded-md mb-4" style={glass}>
+                    <div className="p-4">
                       <p className="mb-0">{exp.trim()}</p>
                     </div>
                   </div>
@@ -249,11 +254,11 @@ export default function Portfolio() {
 
             {/* Educação */}
             {curriculo.educacaoExtraida && (
-              <div className="mb-4">
-                <h4 className="fw-bold border-bottom pb-2 mb-3" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}>🎓 Educação</h4>
+              <div className="mb-6">
+                <h4 className="font-bold text-[1.5rem] leading-[1.2] border-b pb-2 mb-4" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}>🎓 Educação</h4>
                 {curriculo.educacaoExtraida.split(',').map((edu, i) => (
-                  <div key={i} className="card border-0 mb-3" style={glass}>
-                    <div className="card-body">
+                  <div key={i} className="rounded-md mb-4" style={glass}>
+                    <div className="p-4">
                       <p className="mb-0">{edu.trim()}</p>
                     </div>
                   </div>
@@ -263,14 +268,14 @@ export default function Portfolio() {
 
             {/* Projetos */}
             {curriculo.projetosExtraidos && (
-              <div className="mb-4">
-                <h4 className="fw-bold border-bottom pb-2 mb-3" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}>🚀 Projetos</h4>
-                <div className="row g-3">
+              <div className="mb-6">
+                <h4 className="font-bold text-[1.5rem] leading-[1.2] border-b pb-2 mb-4" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}>🚀 Projetos</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {curriculo.projetosExtraidos.split('.').filter(p => p.trim().length > 10).map((proj, i) => (
-                    <div key={i} className="col-md-6">
-                      <div className="card border-0 h-100" style={glass}>
-                        <div className="card-body">
-                          <p className="card-text">{proj.trim()}.</p>
+                    <div key={i}>
+                      <div className="rounded-md h-full" style={glass}>
+                        <div className="p-4">
+                          <p>{proj.trim()}.</p>
                         </div>
                       </div>
                     </div>
@@ -282,8 +287,8 @@ export default function Portfolio() {
         </div>
       </div>
 
-      <footer className="border-top border-secondary text-center py-4 text-secondary small">
-        <span className="fw-semibold text-light">⚡ Gerado em segundos com PortfólioPro</span>
+      <footer className="border-t border-[#6c757d] text-center py-6 text-[#6c757d] text-sm">
+        <span className="font-semibold text-[#f8f9fa]">⚡ Gerado em segundos com PortfólioPro</span>
         <br />
         <span className="opacity-50">portfoiliopro.com.br</span>
       </footer>

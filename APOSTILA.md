@@ -2,7 +2,7 @@
 
 > **Projeto Final — Desenvolvimento de Softwares para a WEB**
 > Gerador de Portfólio para Programadores com IA
-> Stack: Java Spring Boot + PostgreSQL + JPA/Hibernate + Spring Security/JWT + React JS + Bootstrap
+> Stack: Java Spring Boot + PostgreSQL + JPA/Hibernate + Spring Security/JWT + React JS + Tailwind CSS
 
 ---
 
@@ -55,7 +55,7 @@ Todo programador precisa de um portfólio para conseguir emprego, mas:
 ## Números do projeto
 
 - **Back-end:** Java 21 + Spring Boot, ~18 classes divididas em 5 camadas (model, repository, service, controller, security).
-- **Front-end:** React 19 + Vite, 6 páginas + layout com `<Outlet>`, roteamento com React Router 7, Bootstrap 5.
+- **Front-end:** React 19 + Vite, 6 páginas + layout com `<Outlet>`, roteamento com React Router 7, estilização com Tailwind CSS 4.
 - **Banco:** PostgreSQL com 4 tabelas mapeadas via JPA/Hibernate (`usuario`, `curriculo`, `skill` e a junção `curriculo_skill`), com relacionamento **1:N** (Usuario–Curriculo), **N:N** (Curriculo–Skill) e **herança SINGLE_TABLE** (Admin herda de Usuario, coluna discriminadora `tipo`).
 - **Segurança:** Spring Security stateless com JWT (expira em 2 horas) e senhas com BCrypt.
 - **IA:** API da Groq rodando o modelo `llama-3.1-8b-instant`, com extração de texto do PDF feita pelo Apache PDFBox.
@@ -163,7 +163,7 @@ Framework é um "esqueleto pronto" de aplicação: você escreve só a parte esp
 | **Vite** | Empacotador/dev server | Roda o front na porta 5173 com hot-reload |
 | **React Router DOM 7** | Roteador | Navegação entre páginas **sem recarregar** (SPA) |
 | **Axios** | Cliente HTTP | Faz as requisições à API, com interceptor que injeta o token |
-| **Bootstrap 5** | Framework CSS | Classes prontas de layout (cards, grid, botões) |
+| **Tailwind CSS 4** | Framework CSS utilitário | Estiliza tudo via classes utilitárias direto no JSX (`flex`, `rounded-md`, `bg-[#0d6efd]`...), sem escrever CSS separado |
 | **lucide-react** | Ícones | Ícones da landing page |
 
 ## Banco e IA
@@ -265,7 +265,7 @@ Portfolio-Generator/
     ├── package.json          ← dependências npm
     ├── index.html            ← página única da SPA
     └── src/
-        ├── main.jsx          ← monta o React no DOM, importa Bootstrap
+        ├── main.jsx          ← monta o React no DOM
         ├── App.jsx           ← rotas (React Router) + PrivateRoute
         ├── index.css / App.css
         ├── services/
@@ -897,13 +897,23 @@ A senha **nunca** chega ao banco em texto puro: `encode()` gera o hash BCrypt an
 | `GET /usuario/` | `getAllUsuarios` | `findAll()` → lista todos | 200 |
 | `GET /usuario/{id}` | `getUsuarioById` | `findById(id)` | 200 |
 | `POST /usuario/` | `saveUsuario` | `save(usuario)` cru (sem BCrypt — cadastro "oficial" é o `/auth/register`) | 200 |
-| `PUT /usuario/{id}` | `updateUsuario` | Substitui login, email e senha | 200 / 404 |
-| `PATCH /usuario/{id}` | `patchUsuario` | Atualiza **só os campos não nulos** do corpo | 200 / 404 |
-| `DELETE /usuario/{id}` | `deleteUsuario` | `deleteById(id)` (cascade apaga os currículos!) | 200 |
+| `PUT /usuario/{id}` | `updateUsuario` | Substitui login, email e senha — **só a própria conta** | 200 / 403 / 404 |
+| `PATCH /usuario/{id}` | `patchUsuario` | Atualiza **só os campos não nulos** do corpo — **só a própria conta** | 200 / 403 / 404 |
+| `DELETE /usuario/{id}` | `deleteUsuario` | `deleteById(id)` (cascade apaga os currículos!) — **só a própria conta** | 200 / 403 |
 
 Padrão de todos: `@PathVariable` captura o `{id}` da URL; `Optional<Usuario>` + `isPresent()` para tratar o 404; `ResponseEntity<>(corpo, HttpStatus.X)` para montar a resposta.
 
 **Diferença didática PUT × PATCH** (o professor pode perguntar): `PUT` substitui o recurso inteiro (manda tudo); `PATCH` altera parcialmente (só o que veio no corpo — por isso os `if (campo != null)`).
+
+**Identidade pelo token, não pelo `{id}` da URL (Atividade 10):** o `{id}` na URL só endereça o recurso — ele **não prova** quem está fazendo a requisição. Sem uma checagem extra, qualquer usuário autenticado poderia editar ou apagar **qualquer outro** só trocando o número na URL (ex.: logado como o usuário 5, mandar `DELETE /usuario/8` e apagar a conta de outra pessoa). Por isso `updateUsuario`, `patchUsuario` e `deleteUsuario` recebem também `@AuthenticationPrincipal Usuario usuarioAutenticado` e começam com:
+
+```java
+if (!usuarioAutenticado.getId().equals(id)) {
+    return new ResponseEntity<>(HttpStatus.FORBIDDEN);   // 403: só pode mexer na PRÓPRIA conta
+}
+```
+
+`usuarioAutenticado` vem do token (via `SecurityFilter` → `SecurityContextHolder`); `id` vem da URL. Só prosseguimos se os dois coincidirem — ou seja, **o token manda**, a URL só serve para montar a rota REST.
 
 ### `CurriculoController.java` — `/curriculo`
 
@@ -936,14 +946,16 @@ return todos.stream()
 @PostMapping(value = "/", consumes = "multipart/form-data", produces = "application/json")
 public ResponseEntity<Curriculo> saveCurriculo(
         @RequestParam("conteudoTexto") String conteudoTexto,
-        @RequestParam("usuarioId") Long usuarioId,
-        @RequestParam("arquivoPdf") MultipartFile arquivoPdf) {
+        @RequestParam("arquivoPdf") MultipartFile arquivoPdf,
+        @AuthenticationPrincipal Usuario usuarioAutenticado) {   // ← o dono vem do TOKEN
+    ...
+    curriculo.setUsuario(usuarioAutenticado);   // nunca de um id enviado pelo cliente
 ```
 
 - `consumes = "multipart/form-data"`: o formato usado para **enviar arquivos** via HTTP (o corpo vai dividido em "partes": campos de texto + o binário do PDF).
 - `MultipartFile` é a abstração do Spring para o arquivo recebido; `arquivoPdf.getBytes()` dá o binário.
 - Fluxo interno: bytes do PDF → `iaService.extrairDadosDoCurriculo(pdfBytes)` → preenche os 12 campos `*Extraido` no `Curriculo` → **`sincronizarSkills(curriculo)`** popula a relação N:N → `save` → devolve o currículo completo com **201 Created**.
-- Truque do `usuario`: cria-se `new Usuario(); usuario.setId(usuarioId)` — um objeto "casca" só com o id, suficiente para o Hibernate gravar a FK sem consultar o usuário inteiro.
+- **Identidade pelo token, não pela requisição:** esse endpoint **não recebe** `usuarioId` do cliente. O dono do currículo é sempre `@AuthenticationPrincipal Usuario usuarioAutenticado` — o mesmo objeto que o `SecurityFilter` colocou no `SecurityContextHolder` ao validar o JWT. Isso existe por um motivo de segurança concreto: antes, o endpoint recebia um `usuarioId` como campo do formulário e confiava cegamente nele — qualquer um podia trocar esse valor e criar um currículo em nome de **outro** usuário (um clássico **IDOR — Insecure Direct Object Reference**, o mesmo problema do exemplo `/add/camera/10`: usar um id vindo do cliente para decidir "de quem" é o recurso). A correção: nunca aceitar a identidade do dono via URL/body/form — sempre derivá-la do token.
 
 **O PATCH com autorização em nível de objeto:**
 
@@ -964,6 +976,8 @@ public ResponseEntity<Curriculo> patchCurriculo(@PathVariable Long id,
 - `@AuthenticationPrincipal` injeta o **usuário autenticado da requisição atual** — exatamente o objeto que o `SecurityFilter` colocou no `SecurityContextHolder` ao validar o JWT.
 - Antes de editar, compara o dono do currículo com quem está pedindo: **um usuário não consegue editar o portfólio de outro** (retorna 403). Isso é autorização *em nível de objeto*, um degrau acima da simples autenticação.
 - Quando o corpo traz `skillsExtraidas`, o PATCH também chama `sincronizarSkills` — o texto editado e a relação N:N ficam sempre coerentes.
+- Repare que o `id` na URL (`/curriculo/{id}`) identifica o **currículo** (o recurso), não o usuário — isso é normal e esperado em REST. O que não pode acontecer é usar esse `id` (ou qualquer campo do corpo) para decidir **de quem** é o recurso: essa decisão vem sempre do token.
+- O **mesmo padrão** (`@AuthenticationPrincipal` + comparação de login antes de agir) também foi aplicado ao `updateCurriculo` (PUT) e ao `deleteCurriculo` (DELETE) — nenhum dos três verbos de escrita confia no corpo/URL para saber quem é o dono. E nenhum deles permite **reatribuir** o dono via corpo da requisição (o campo `usuario` do JSON é sempre ignorado nessas operações) — senão um usuário poderia "transferir" o currículo de outra pessoa para si mesmo só editando o JSON enviado.
 
 **O método `sincronizarSkills` (a "cola" entre o texto da IA e o N:N):**
 
@@ -1196,10 +1210,10 @@ source.registerCorsConfiguration("/**", config);   // vale para todas as rotas
 - **Componente controlado:** input cujo `value` vem do estado e cujo `onChange` atualiza o estado — o React é a fonte da verdade do formulário.
 - **Props:** parâmetros que um componente recebe. Ex.: `PrivateRoute({ children })` — `children` é o conteúdo passado entre as tags.
 
-## 10.2 `main.jsx` — o bootstrap da aplicação
+## 10.2 `main.jsx` — o bootstrap (inicialização) da aplicação
 
 ```jsx
-import 'bootstrap/dist/css/bootstrap.min.css'   // CSS do Bootstrap para o app inteiro
+import './index.css'          // aqui entra o Tailwind (@import "tailwindcss")
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
@@ -1209,7 +1223,23 @@ createRoot(document.getElementById('root')).render(
 )
 ```
 
-O `index.html` tem uma única `<div id="root">`; o React "monta" toda a aplicação dentro dela (por isso SPA). `StrictMode` ativa checagens extras em desenvolvimento.
+O `index.html` tem uma única `<div id="root">`; o React "monta" toda a aplicação dentro dela (por isso SPA). `StrictMode` ativa checagens extras em desenvolvimento. O `index.css` começa com `@import "tailwindcss";`, que injeta todas as classes utilitárias do Tailwind (`flex`, `rounded-md`, `bg-[#0d6efd]`...) usadas nas páginas.
+
+> Nota: "bootstrap da aplicação" aqui é o termo genérico de programação para **"inicialização"** (carregar e arrancar o app) — não tem relação com o **framework CSS Bootstrap**, que não é mais usado neste projeto (ver 10.1-A).
+
+### 10.1-A Por que Tailwind CSS em vez de Bootstrap
+
+O projeto foi migrado de Bootstrap 5 para **Tailwind CSS 4** (instalado via `@tailwindcss/vite`, que integra o Tailwind direto no build do Vite sem precisar de `tailwind.config.js` — a configuração vive em CSS, no próprio `@import "tailwindcss"`). Isso é uma mudança de framework CSS, **não** de conceitos React — `useState`, `useEffect`, `.map()`, componentes controlados etc. continuam exatamente iguais.
+
+**A diferença de filosofia entre os dois:**
+
+| | Bootstrap | Tailwind |
+|---|---|---|
+| Unidade de estilo | Componentes prontos (`.btn`, `.card`, `.alert`) já com aparência definida | Classes utilitárias atômicas (`flex`, `px-4`, `rounded-md`) que você combina você mesmo |
+| Onde mora o CSS | Um arquivo `.css` gigante e genérico, importado inteiro | Gerado sob demanda: só entram no build as classes realmente usadas no JSX |
+| Customizar um componente | Sobrescrever CSS ou usar variáveis Sass | Trocar a combinação de classes diretamente no elemento |
+
+Cada classe Bootstrap tem um equivalente direto (ou uma combinação equivalente) em Tailwind — por exemplo: `d-flex` → `flex`, `btn btn-primary` → `bg-[#0d6efd] text-white rounded-md px-3 py-1.5`, `container`/`row`/`col-md-6` → `grid grid-cols-1 md:grid-cols-2 gap-4`. O **resultado visual é idêntico** ao Bootstrap original — só mudou a ferramenta usada para chegar lá.
 
 ## 10.3 `App.jsx` — rotas e proteção
 
@@ -1296,7 +1326,7 @@ Array `THEMES` com 8 objetos `{ id, nome, gradient }` (gradientes CSS) + `getThe
 
 ## 10.7 `pages/Home.jsx` — a landing page
 
-Página pública de marketing: navbar com botões **Entrar**/**Criar conta** (usam `useNavigate()` para trocar de rota), hero com título e call-to-action, e três cards de features (Upload de PDF, Extração por IA, Portfólio público) com ícones do `lucide-react`. Layout todo em classes Bootstrap (`container`, `row`, `col-md-4`, `btn btn-primary`...).
+Página pública de marketing: navbar com botões **Entrar**/**Criar conta** (usam `useNavigate()` para trocar de rota), hero com título e call-to-action, e três cards de features (Upload de PDF, Extração por IA, Portfólio público) com ícones do `lucide-react`. Layout todo em classes utilitárias do Tailwind (`flex`, `grid grid-cols-1 md:grid-cols-3`, `bg-[#0d6efd]`...) — o container central usa a classe customizada `.container-bs` (definida em `index.css`), que replica exatamente os breakpoints do antigo `.container` do Bootstrap.
 
 ## 10.8 `pages/Login.jsx` e `pages/Cadastro.jsx`
 
@@ -1323,7 +1353,7 @@ async function handleSubmit(e) {
 ```
 
 - Inputs **controlados** (`value` + `onChange`).
-- Estados de UX: `carregando` desabilita o botão e troca o texto ("Entrando..."); `erro` mostra um `alert-danger` do Bootstrap.
+- Estados de UX: `carregando` desabilita o botão e troca o texto ("Entrando..."); `erro` mostra uma caixa de alerta vermelha (classes Tailwind `bg-[#f8d7da] text-[#842029] border border-[#f5c2c7]`, as mesmas cores exatas do antigo `.alert-danger` do Bootstrap).
 - **Cadastro:** envia `{ login, email, password, role: 'USER' }` para `/auth/register` e redireciona para `/login` (o usuário então loga). Em erro: "login pode já estar em uso" (o back devolve 400 para duplicado).
 - `localStorage` = armazenamento persistente do navegador (sobrevive a fechar a aba). É onde o token vive até o logout.
 
@@ -1352,15 +1382,14 @@ Se o usuário já tem currículo, o formulário abre preenchido (dá para contin
 const formData = new FormData()                       // corpo multipart/form-data
 formData.append('arquivoPdf', arquivo)                // o ARQUIVO em si
 formData.append('conteudoTexto', 'Currículo de ' + login)
-const usuarios = await api.get('/usuario/')           // descobre o id do usuário logado
-const usuarioAtual = usuarios.data.find(u => u.login === login)
-formData.append('usuarioId', usuarioAtual.id)
 const resposta = await api.post('/curriculo/', formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } })
+    { headers: { 'Content-Type': 'multipart/form-data' } })   // o interceptor já manda o Bearer Token
 preencherCampos(resposta.data)                        // preenche o form com o que a IA extraiu
 ```
 
 Enquanto isso, `enviando === true` mostra o spinner "Processando IA...". Após o upload, se o usuário já tinha foto/fundo/favicon, um `PATCH` os re-aplica ao novo registro de currículo (para não perder a personalização ao reenviar o PDF).
+
+> **Nota (Atividade 10):** este trecho **não manda mais** `usuarioId` — antes o front fazia um `GET /usuario/` (listando todo mundo!) só para descobrir o próprio id e anexá-lo ao form-data. Isso foi removido porque o back-end passou a identificar o dono do currículo **direto pelo Bearer Token** (`CurriculoController.saveCurriculo`, ver Parte 7.8) — o front não precisa mais informar quem é o usuário, e não teria como fraudar essa informação mesmo se tentasse.
 
 **c) Personalização visual**
 
@@ -1469,6 +1498,8 @@ Página 404 personalizada (exigência do enunciado): "404 — Página não encon
 | `useState` intensivo + listas com `.map()` | ✅ | `Dashboard.jsx` e `Portfolio.jsx` |
 | Upload de PDF via form-data acionando IA e renderizando portfólio | ✅ | `Dashboard.jsx` → `POST /curriculo/` → `IaService` → `Portfolio.jsx` |
 | Diagrama UML com Herança, Associação, Agregação/Composição | ⚠️ | Conceitos todos no código; **regerar o PDF** incluindo `Admin` e `Skill` (ver Parte 5) |
+| **Front-end com HTML, CSS e Bootstrap** | ❌ | O CSS do front foi migrado de Bootstrap para **Tailwind CSS** (ver 12.5) — decisão consciente do grupo, resultado visual idêntico, mas a tecnologia nomeada no enunciado não está mais em uso |
+| Identidade do usuário sempre pelo Bearer Token (nunca por id na URL/body/form) | ✅ | `@AuthenticationPrincipal` em todos os endpoints de escrita de `CurriculoController` e `UsuarioController` (ver 12.6) |
 
 ## 12.1 Herança SINGLE_TABLE com @DiscriminatorColumn — ✅ IMPLEMENTADA
 
@@ -1493,12 +1524,36 @@ Página 404 personalizada (exigência do enunciado): "404 — Página não encon
 - **Frase de defesa:** "O `AuthLayout` é o template: header, navegação e footer fixos, e o `<Outlet>` é o 'buraco' onde o Router injeta a página filha conforme a URL. Navegando entre /login e /cadastro, o layout nem re-renderiza — só o miolo troca, sem recarregar a página."
 - Detalhes completos: Partes 10.3 e 10.4.
 
+## 12.5 Bootstrap → Tailwind CSS — ⚠️ DESVIO CONSCIENTE DO ENUNCIADO
+
+Ao contrário dos itens 12.1-12.3 (que **fecharam** lacunas), este é um ponto em que o grupo **se afastou** de algo que o enunciado pede explicitamente: *"Front-end: React JS (com HTML, CSS e Bootstrap)"*. Seja honesto sobre isso se perguntado — é a postura que temos mantido em toda esta apostila.
+
+- **O que foi feito:** todo o CSS do front-end foi reescrito trocando as classes do Bootstrap 5 por classes utilitárias equivalentes do **Tailwind CSS 4** (instalado via `@tailwindcss/vite`), em `AuthLayout.jsx` e nas 6 páginas (`Home`, `Login`, `Cadastro`, `NotFound`, `Dashboard`, `Portfolio`). O pacote `bootstrap` foi removido do `package.json`.
+- **Por que o resultado visual não mudou:** cada classe Bootstrap foi mapeada para o equivalente exato em Tailwind — cores convertidas para o hexadecimal exato do Bootstrap (ex.: `btn-primary` → `bg-[#0d6efd]`, o azul oficial do Bootstrap), espaçamentos convertidos rem-a-rem (a escala de espaçamento do Bootstrap não é a mesma do Tailwind por padrão: `p-3` do Bootstrap = 1rem, que corresponde a `p-4` no Tailwind, não a `p-3`), e o grid `container`/`row`/`col-*` foi recriado com CSS Grid do Tailwind (`grid grid-cols-1 md:grid-cols-2`) reproduzindo os mesmos breakpoints. O resultado foi comparado visualmente (screenshots antes/depois) e não há diferença perceptível.
+- **Por que o grupo decidiu isso:** preferência por Tailwind como ferramenta de estilização mais moderna e amplamente usada no mercado atual.
+- **Se o professor perguntar por que não é mais Bootstrap:** a resposta honesta é "trocamos por preferência da equipe; sabemos que o enunciado pedia Bootstrap especificamente, e a arquitetura RESTful/JPA/segurança (o núcleo técnico avaliado) não foi afetada — só a camada de estilização visual." Não tente esconder a troca; ela é visível no `package.json` e no `index.css` (`@import "tailwindcss"`) na hora que o professor abrir o projeto.
+- **Onde ver a implementação:** `frontend/vite.config.js` (plugin `@tailwindcss/vite`), `frontend/src/index.css` (`@import "tailwindcss"` + a classe `.container-bs` que replica o grid do Bootstrap), e o `className` de qualquer componente em `frontend/src/pages/` ou `frontend/src/layouts/`.
+
+## 12.6 Atividade 10 (aula) — identidade sempre pelo Bearer Token, nunca por URL/body — ✅ IMPLEMENTADO
+
+Atividade proposta pelo professor: *"em todos os controllers que requeiram autenticação, obtenha o login através do bearer token; certifique-se que você não esteja passando informações do usuário por url, como `/add/camera/10`."*
+
+- **O problema que existia:** `CurriculoController.saveCurriculo` (POST) recebia um campo `usuarioId` enviado pelo **cliente** (form-data) e confiava nele cegamente para decidir o dono do novo currículo — exatamente o antipadrão do exemplo `/add/camera/10`. Além disso, `UsuarioController.updateUsuario/patchUsuario/deleteUsuario` deixavam qualquer usuário autenticado editar/apagar **qualquer outra conta**, só trocando o `{id}` na URL; e `CurriculoController.updateCurriculo/deleteCurriculo` (PUT/DELETE) não verificavam dono nenhum.
+- **A correção, em uma frase:** todo endpoint que precisa saber "de quem é isso" usa `@AuthenticationPrincipal Usuario usuarioAutenticado` — o objeto que o `SecurityFilter` já validou a partir do JWT — e **nunca** um id vindo de `@RequestParam`, `@PathVariable` (sem checagem) ou do corpo JSON.
+- **Onde foi aplicado:**
+  - `CurriculoController.saveCurriculo`: removido `@RequestParam("usuarioId")`; o dono agora é `usuarioAutenticado` direto.
+  - `CurriculoController.updateCurriculo` e `.deleteCurriculo`: ganharam a mesma checagem de dono que o `patchCurriculo` já tinha (compara `curriculo.getUsuario().getLogin()` com `usuarioAutenticado.getLogin()`, 403 se não bater).
+  - `CurriculoController.patchCurriculo` e `.updateCurriculo`: **também pararam de aceitar reatribuição do dono** via corpo da requisição (o campo `usuario` do JSON é ignorado) — senão daria para "roubar" um currículo editando o JSON.
+  - `UsuarioController.updateUsuario/patchUsuario/deleteUsuario`: ganharam `if (!usuarioAutenticado.getId().equals(id)) return FORBIDDEN;` — um usuário só mexe na própria conta.
+  - `Dashboard.jsx`: como o back-end não precisa mais de `usuarioId`, removemos a chamada `GET /usuario/` que o front fazia só para descobrir o próprio id (e que, de quebra, expunha a lista de todos os usuários).
+- **Testado com curl:** criamos dois usuários, A criou um currículo sem mandar `usuarioId` (o dono no banco ficou correto, do jeito automático); B tentou `PATCH`, `DELETE` no currículo de A → **403** nos dois; B tentou `PUT /usuario/{idDeA}` → **403**; A editando o próprio currículo → **200**.
+- **Frase de defesa:** "O id na URL serve só para **endereçar o recurso** (REST precisa disso); a **identidade de quem está pedindo** vem sempre do token, nunca de um campo que o cliente controla. Testamos com dois usuários via curl: um não consegue mexer nos dados do outro, mesmo sabendo o id."
+
 ## 12.4 Detalhes técnicos que podem virar pergunta capciosa (melhorias conhecidas, não exigidas pelo enunciado)
 
 | Ponto | O que dizer |
 |---|---|
-| **PUT e DELETE de `/curriculo` não checam o dono** (só o PATCH checa) | "Exigem autenticação, mas a checagem de propriedade só foi implementada no PATCH, que é o que o front usa. Melhoria conhecida: replicar o `@AuthenticationPrincipal` + comparação de dono nos demais." |
-| **`GET /usuario/` devolve todos os usuários (com hash da senha) para qualquer logado** | "O hash BCrypt não é reversível, mas o ideal seria um DTO de resposta sem o campo senha e/ou um endpoint `/usuario/me`. Está no roadmap." |
+| **`GET /usuario/` devolve todos os usuários (com hash da senha) para qualquer logado** | "O hash BCrypt não é reversível, mas o ideal seria um DTO de resposta sem o campo senha e/ou restringir a um endpoint `/usuario/me`. O front não usa mais esse endpoint (ver 12.6), mas ele continua exposto no back-end — está no roadmap." |
 | **Login errado devolve 500, não 401** | "O `catch` genérico devolve `internalServerError`. O correto seria capturar `BadCredentialsException` e devolver 401 Unauthorized." |
 | **Enum salvo como ordinal** | Ver Parte 6.2 — falta `@Enumerated(EnumType.STRING)`. |
 | **`jjwt-api` no pom sem uso** | Dependência residual; o JWT real é o `com.auth0:java-jwt`. |
@@ -1579,10 +1634,16 @@ Página 404 personalizada (exigência do enunciado): "404 — Página não encon
 → Dentro do `authenticationManager.authenticate()`: o Spring chama nosso `AuthorizationService.loadUserByUsername`, pega o `getPassword()` (hash) do `UserDetails` e compara com a senha digitada usando o bean `BCryptPasswordEncoder`.
 
 **18. "Um usuário pode editar o portfólio de outro?"**
-→ Não pelo fluxo real: o PATCH usa `@AuthenticationPrincipal` e compara o login do dono com o do autenticado — retorna 403. (Se aprofundarem: PUT/DELETE ainda não têm essa checagem — melhoria mapeada.)
+→ Não em nenhum verbo: PATCH, PUT e DELETE de `/curriculo/{id}` usam `@AuthenticationPrincipal` e comparam o login do dono com o do autenticado — retorna 403 se não bater. E nenhum dos três deixa reatribuir o dono via corpo da requisição.
 
 **19. "Proteger rota no front basta?"**
 → Não. O `PrivateRoute` é UX (redireciona quem não tem token). A segurança real é o back: sem token válido, 403 em qualquer endpoint protegido. Dá para demonstrar com curl/Postman.
+
+**19a. "Como vocês garantem que o dono de um recurso é sempre quem o token diz, e não um id que o cliente manda?"**
+→ Todo endpoint de escrita recebe `@AuthenticationPrincipal Usuario usuarioAutenticado` — o Spring injeta esse objeto a partir do que o `SecurityFilter` já validou do JWT, então ele não pode ser forjado pelo cliente. No `saveCurriculo`, por exemplo, o dono do currículo é `usuarioAutenticado` direto — o endpoint nem aceita mais um `usuarioId` vindo do form-data (aceitava antes; era uma falha clássica de IDOR, corrigida). Em `UsuarioController`, `updateUsuario/patchUsuario/deleteUsuario` comparam `usuarioAutenticado.getId()` com o `{id}` da URL e barram com 403 se forem diferentes — um usuário só mexe na própria conta, mesmo sabendo o id de outra.
+
+**19b. "Qual a diferença entre `id` na URL identificar o recurso vs identificar o usuário?"**
+→ `/curriculo/{id}` — o `id` é do **currículo** (o recurso sendo manipulado); é normal e necessário em REST. O que não pode é usar esse id (ou qualquer campo do corpo) para decidir **de quem** é esse recurso — isso sempre vem do token. Já em `/usuario/{id}`, o `id` da URL representa diretamente "qual usuário" — por isso ali comparamos esse id com o id do usuário autenticado antes de agir; se forem diferentes, 403.
 
 ### Bloco D — IA
 

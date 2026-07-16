@@ -6,7 +6,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import br.unesp.backend.model.Usuario;
 import br.unesp.backend.repository.UsuarioRepository;
 
-@Controller("UsuarioController")
+@RestController("UsuarioController")
 @RequestMapping(value = "/usuario")
 public class UsuarioController {
 
@@ -52,7 +53,14 @@ public class UsuarioController {
     @PutMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<Usuario> updateUsuario(
             @PathVariable(value = "id") Long id,
-            @RequestBody Usuario usuarioAtualizado) {
+            @RequestBody Usuario usuarioAtualizado,
+            @AuthenticationPrincipal Usuario usuarioAutenticado) {
+
+        // O id na URL só serve para montar a rota REST — quem manda de verdade é o
+        // Bearer Token. Um usuário só pode editar A SI MESMO, nunca outro por id.
+        if (!usuarioAutenticado.getId().equals(id)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
 
         Optional<Usuario> usuarioExistente = usuarioRepository.findById(id);
 
@@ -74,7 +82,12 @@ public class UsuarioController {
     @PatchMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<Usuario> patchUsuario(
             @PathVariable(value = "id") Long id,
-            @RequestBody Usuario usuarioAtualizado) {
+            @RequestBody Usuario usuarioAtualizado,
+            @AuthenticationPrincipal Usuario usuarioAutenticado) {
+
+        if (!usuarioAutenticado.getId().equals(id)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
 
         Optional<Usuario> usuarioExistente = usuarioRepository.findById(id);
 
@@ -103,7 +116,13 @@ public class UsuarioController {
 
     @DeleteMapping(value = "/{id}", produces = "application/text")
     public ResponseEntity<Usuario> deleteUsuario(
-            @PathVariable(value = "id") Long id) {
+            @PathVariable(value = "id") Long id,
+            @AuthenticationPrincipal Usuario usuarioAutenticado) {
+
+        if (!usuarioAutenticado.getId().equals(id)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
         usuarioRepository.deleteById(id);
 
         return new ResponseEntity<>(HttpStatus.OK);
