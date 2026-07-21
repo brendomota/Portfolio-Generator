@@ -1,3 +1,18 @@
+@import "tailwindcss";
+
+/* Réplica exata do .container do Bootstrap 5 (mesmos breakpoints/gutter),
+   com outro nome para não colidir com o utilitário .container do Tailwind. */
+.container-bs {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 0.75rem;
+}
+@media (min-width: 576px)  { .container-bs { max-width: 540px; } }
+@media (min-width: 768px)  { .container-bs { max-width: 720px; } }
+@media (min-width: 992px)  { .container-bs { max-width: 960px; } }
+@media (min-width: 1200px) { .container-bs { max-width: 1140px; } }
+@media (min-width: 1400px) { .container-bs { max-width: 1320px; } }
+
 /* Home page */
 
 .home-page {

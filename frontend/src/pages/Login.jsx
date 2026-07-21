@@ -32,17 +32,17 @@ export default function Login() {
   }
 
   return (
-    <div className="card shadow p-4" style={{ width: '100%', maxWidth: 420 }}>
-        <h2 className="text-center fw-bold mb-1 text-dark">🚀 PortfólioPro</h2>
-        <p className="text-center text-muted mb-4">Entre na sua conta</p>
+    <div className="bg-white border border-[rgba(0,0,0,0.175)] rounded-md shadow-[0_0.5rem_1rem_rgba(0,0,0,0.15)] p-6" style={{ width: '100%', maxWidth: 420 }}>
+        <h2 className="text-center font-bold text-[2rem] leading-[1.2] mb-1 text-[#212529]">🚀 PortfólioPro</h2>
+        <p className="text-center text-[#6c757d] mb-6">Entre na sua conta</p>
 
-        {erro && <div className="alert alert-danger">{erro}</div>}
+        {erro && <div className="bg-[#f8d7da] text-[#842029] border border-[#f5c2c7] rounded-md p-4 mb-4">{erro}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label">Login</label>
+          <div className="mb-4">
+            <label className="block mb-2">Login</label>
             <input
-              className="form-control"
+              className="block w-full px-3 py-1.5 text-base leading-normal text-[#212529] bg-white border border-[#dee2e6] rounded-md transition focus:outline-none focus:border-[#86b7fe] focus:shadow-[0_0_0_0.25rem_rgba(13,110,253,0.25)]"
               name="login"
               value={form.login}
               onChange={handleChange}
@@ -50,10 +50,10 @@ export default function Login() {
               autoFocus
             />
           </div>
-          <div className="mb-3">
-            <label className="form-label">Senha</label>
+          <div className="mb-4">
+            <label className="block mb-2">Senha</label>
             <input
-              className="form-control"
+              className="block w-full px-3 py-1.5 text-base leading-normal text-[#212529] bg-white border border-[#dee2e6] rounded-md transition focus:outline-none focus:border-[#86b7fe] focus:shadow-[0_0_0_0.25rem_rgba(13,110,253,0.25)]"
               type="password"
               name="password"
               value={form.password}
@@ -63,16 +63,16 @@ export default function Login() {
           </div>
           <button
             type="submit"
-            className="btn btn-primary w-100"
+            className="inline-flex items-center justify-center w-full px-3 py-1.5 rounded-md border border-[#0d6efd] text-base leading-normal cursor-pointer transition bg-[#0d6efd] text-white hover:bg-[#0b5ed7] hover:border-[#0a58ca] focus:outline-none focus:shadow-[0_0_0_0.25rem_rgba(49,132,253,0.5)] disabled:opacity-[0.65] disabled:cursor-not-allowed"
             disabled={carregando}
           >
             {carregando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
-      <p className="text-center mt-3 mb-0">
+      <p className="text-center mt-4 mb-0">
         Não tem conta?{' '}
-        <Link to="/cadastro">Cadastre-se</Link>
+        <Link to="/cadastro" className="text-[#0d6efd] hover:underline">Cadastre-se</Link>
       </p>
     </div>
   )

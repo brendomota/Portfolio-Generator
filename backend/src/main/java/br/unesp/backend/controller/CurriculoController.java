@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-@Controller("CurriculoController")
+@RestController("CurriculoController")
 @RequestMapping(value = "/curriculo")
 public class CurriculoController {
     @Autowired
@@ -87,13 +86,10 @@ public class CurriculoController {
     @PostMapping(value = "/", consumes = "multipart/form-data", produces = "application/json")
     public ResponseEntity<Curriculo> saveCurriculo(
             @RequestParam("conteudoTexto") String conteudoTexto,
-            @RequestParam("usuarioId") Long usuarioId,
-            @RequestParam("arquivoPdf") MultipartFile arquivoPdf) {
+            @RequestParam("arquivoPdf") MultipartFile arquivoPdf,
+            @AuthenticationPrincipal Usuario usuarioAutenticado) {
 
         try {
-            Usuario usuario = new Usuario();
-            usuario.setId(usuarioId);
-
             byte[] pdfBytes = arquivoPdf.isEmpty() ? new byte[0] : arquivoPdf.getBytes();
 
             // Send PDF to AI and extract structured data
@@ -101,7 +97,9 @@ public class CurriculoController {
 
             Curriculo curriculo = new Curriculo();
             curriculo.setConteudoTexto(conteudoTexto);
-            curriculo.setUsuario(usuario);
+            // O dono do currículo é SEMPRE quem está autenticado pelo Bearer Token,
+            // nunca um id que o cliente possa enviar (evita IDOR / criar currículo em nome de outro usuário)
+            curriculo.setUsuario(usuarioAutenticado);
             curriculo.setArquivoPdf(pdfBytes);
 
             // Populate AI-extracted fields
@@ -134,7 +132,8 @@ public class CurriculoController {
     @PutMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<Curriculo> updateCurriculo(
             @PathVariable(value = "id") Long id,
-            @RequestBody Curriculo curriculoAtualizado) {
+            @RequestBody Curriculo curriculoAtualizado,
+            @AuthenticationPrincipal Usuario usuarioAutenticado) {
 
         Optional<Curriculo> curriculoExistente = curriculoRepository.findById(id);
 
@@ -144,12 +143,16 @@ public class CurriculoController {
 
         Curriculo curriculo = curriculoExistente.get();
 
+        // O id na URL identifica o CURRÍCULO (recurso), não o usuário — mas antes de
+        // mexer nele, confirmamos que o dono bate com quem o Bearer Token identifica.
+        if (curriculo.getUsuario() == null ||
+                !curriculo.getUsuario().getLogin().equals(usuarioAutenticado.getLogin())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
         curriculo.setConteudoTexto(curriculoAtualizado.getConteudoTexto());
         curriculo.setArquivoPdf(curriculoAtualizado.getArquivoPdf());
-
-        if (curriculoAtualizado.getUsuario() != null) {
-            curriculo.setUsuario(curriculoAtualizado.getUsuario());
-        }
+        // O dono nunca é reatribuído a partir do corpo da requisição — permanece o mesmo.
 
         Curriculo curriculoSalvo = curriculoRepository.save(curriculo);
 
@@ -193,9 +196,8 @@ public class CurriculoController {
         if (curriculoAtualizado.getArquivoPdf() != null) {
             curriculo.setArquivoPdf(curriculoAtualizado.getArquivoPdf());
         }
-        if (curriculoAtualizado.getUsuario() != null) {
-            curriculo.setUsuario(curriculoAtualizado.getUsuario());
-        }
+        // O dono nunca é reatribuível pelo corpo da requisição — senão qualquer editor
+        // do currículo poderia "transferi-lo" para outro usuário via PATCH.
         if (curriculoAtualizado.getNomeExtraido() != null) {
             curriculo.setNomeExtraido(curriculoAtualizado.getNomeExtraido());
         }
@@ -242,7 +244,22 @@ public class CurriculoController {
 
     @DeleteMapping(value = "/{id}", produces = "application/text")
     public ResponseEntity<Curriculo> deleteCurriculo(
-            @PathVariable(value = "id") Long id) {
+            @PathVariable(value = "id") Long id,
+            @AuthenticationPrincipal Usuario usuarioAutenticado) {
+
+        Optional<Curriculo> curriculoExistente = curriculoRepository.findById(id);
+
+        if (!curriculoExistente.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Curriculo curriculo = curriculoExistente.get();
+
+        if (curriculo.getUsuario() == null ||
+                !curriculo.getUsuario().getLogin().equals(usuarioAutenticado.getLogin())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
         curriculoRepository.deleteById(id);
 
         return new ResponseEntity<>(HttpStatus.OK);
